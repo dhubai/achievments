@@ -25,6 +25,11 @@ Use **this repository** (`dhubai/achievments`) as the sandbox. GitHub awards ach
 
 This enables Discussions, sets topics, and prints branch-protection checks for YOLO.
 
+**For Actions-based PR workflows** (YOLO, Pull Shark, Pair):  
+Repo **Settings → Actions → General → Workflow permissions** → enable  
+**Allow GitHub Actions to create and approve pull requests**.  
+If that stays off, use the local scripts (`lab-yolo.sh`, `lab-pull-shark.sh`, …) with your `gh auth login` token instead.
+
 ## Run everything (local, with `gh`)
 
 ```bash
