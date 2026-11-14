@@ -17,7 +17,7 @@ category_id=$(gh api graphql -f query='
     }
   }
 ' -f owner="$owner" -f name="$name" \
-  --jq '.data.repository.discussionCategories.nodes[] | select(.name=="Q&A" or .name=="General") | .id' | head -1)
+  --jq '.data.repository.discussionCategories.nodes[] | select(.name=="Q&A") | .id' | head -1)
 
 if [ -z "$category_id" ]; then
   echo "No Q&A category yet. On GitHub: Discussions → gear → add Q&A category, then re-run."
