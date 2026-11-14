@@ -1,0 +1,47 @@
+# Research: merge a PR without review (YOLO). Disable required reviews on main first.
+name: research-yolo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: research-yolo
+  cancel-in-progress: false
+
+jobs:
+  yolo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create branch and commit
+        run: |
+          branch="research/yolo-$(date -u +%Y%m%dT%H%M%SZ)"
+          echo "${{ github.run_id }}" >> research/yolo-log.txt
+          git checkout -b "$branch"
+          git add research/yolo-log.txt
+          git commit -m "research: YOLO merge ${{ github.run_id }}"
+          git push origin "$branch"
+          echo "BRANCH=$branch" >> "$GITHUB_ENV"
+
+      - name: Open and merge PR without review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr=$(gh pr create \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --head "$BRANCH" \
+            --title "research: YOLO ${{ github.run_id }}" \
+            --body "Research merge without approval (YOLO achievement).")
+          gh pr merge "$pr" --merge --repo "${{ github.repository }}"
+          echo "Merged PR #${pr}"

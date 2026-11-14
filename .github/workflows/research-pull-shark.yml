@@ -1,0 +1,54 @@
+# Research: one merged PR per run toward Pull Shark tiers (account-wide).
+name: research-pull-shark
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: Number of PRs to merge this run (max 5)
+        required: false
+        default: "1"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          - "5"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  pull-shark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge PR batch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BATCH: ${{ inputs.batch }}
+        run: |
+          for i in $(seq 1 "$BATCH"); do
+            branch="research/pull-shark-${GITHUB_RUN_ID}-${i}"
+            file="research/pull-shark/${GITHUB_RUN_ID}-${i}.md"
+            mkdir -p research/pull-shark
+            printf '# Pull Shark research run\n\n- run: %s\n- index: %s\n' "$GITHUB_RUN_ID" "$i" > "$file"
+            git checkout -b "$branch"
+            git add "$file"
+            git commit -m "research: pull-shark ${GITHUB_RUN_ID}-${i}"
+            git push origin "$branch"
+            pr=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+              --title "research: pull-shark ${GITHUB_RUN_ID}-${i}" \
+              --body "Pull Shark research — merge to count toward merged PRs opened by account.")
+            gh pr merge "$pr" --merge --repo "$GITHUB_REPOSITORY"
+            git checkout main
+            git pull origin main
+          done

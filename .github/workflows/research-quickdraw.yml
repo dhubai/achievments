@@ -1,0 +1,43 @@
+# Research: close an issue within 5 minutes of opening (Quickdraw).
+name: research-quickdraw
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: research-quickdraw
+  cancel-in-progress: false
+
+jobs:
+  quickdraw:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open research issue
+        id: open
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          num=$(gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "research: quickdraw $(date -u +%Y%m%dT%H%M%SZ)" \
+            --body "Automated Quickdraw research run. Will close within 5 minutes." \
+            --label "research" 2>/dev/null || gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "research: quickdraw $(date -u +%Y%m%dT%H%M%SZ)" \
+            --body "Automated Quickdraw research run. Will close within 5 minutes.")
+          echo "number=${num}" >> "$GITHUB_OUTPUT"
+          echo "Opened issue #${num}"
+
+      - name: Wait (under 5 minute window)
+        run: sleep 90
+
+      - name: Close issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue close "${{ steps.open.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --comment "Quickdraw research: closed within 5 minutes."

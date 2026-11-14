@@ -1,0 +1,50 @@
+# Research: merged PR with Co-authored-by trailer (Pair Extraordinaire).
+name: research-pair-extraordinaire
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  pair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate secrets
+        env:
+          COAUTHOR_NAME: ${{ secrets.COAUTHOR_NAME }}
+          COAUTHOR_EMAIL: ${{ secrets.COAUTHOR_EMAIL }}
+        run: |
+          if [ -z "$COAUTHOR_NAME" ] || [ -z "$COAUTHOR_EMAIL" ]; then
+            echo "Set repo secrets COAUTHOR_NAME and COAUTHOR_EMAIL (second GitHub account noreply email)."
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Co-authored commit and merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COAUTHOR_NAME: ${{ secrets.COAUTHOR_NAME }}
+          COAUTHOR_EMAIL: ${{ secrets.COAUTHOR_EMAIL }}
+        run: |
+          branch="research/pair-${GITHUB_RUN_ID}"
+          file="research/pair/${GITHUB_RUN_ID}.md"
+          mkdir -p research/pair
+          echo "pair research ${GITHUB_RUN_ID}" > "$file"
+          git checkout -b "$branch"
+          git add "$file"
+          git commit -m "research: pair extraordinaire ${GITHUB_RUN_ID}" \
+            -m "Co-authored-by: ${COAUTHOR_NAME} <${COAUTHOR_EMAIL}>"
+          git push origin "$branch"
+          pr=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "research: pair ${GITHUB_RUN_ID}" \
+            --body "Pair Extraordinaire research (co-authored trailer).")
+          gh pr merge "$pr" --merge --repo "$GITHUB_REPOSITORY"
